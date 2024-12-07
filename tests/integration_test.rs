@@ -1,8 +1,12 @@
-use std::time::Duration;
-use rstest::*;
 use mlflow_rs::add;
-use testcontainers::{core::{IntoContainerPort, WaitFor}, runners::SyncRunner, ContainerRequest, GenericImage, ImageExt};
+use rstest::*;
+use std::time::Duration;
 use testcontainers::core::ContainerPort::Tcp;
+use testcontainers::{
+    core::{IntoContainerPort, WaitFor},
+    runners::SyncRunner,
+    ContainerRequest, GenericImage, ImageExt,
+};
 
 const MLFLOW_VERSION: &str = "2.18.0";
 const MLFLOW_DOCKER_IMAGE: &str = "ghcr.io/mlflow/mlflow";
@@ -22,7 +26,6 @@ fn mlflow_server_container() -> ContainerRequest<GenericImage> {
 
     container
 }
-
 
 #[test]
 fn test_add() {
