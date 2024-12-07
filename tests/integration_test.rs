@@ -2,9 +2,7 @@ use mlflow_rs::add;
 use rstest::*;
 use testcontainers::core::ContainerPort::Tcp;
 use testcontainers::{
-    core::{WaitFor},
-    runners::SyncRunner,
-    ContainerRequest, GenericImage, ImageExt,
+    core::WaitFor, runners::SyncRunner, ContainerRequest, GenericImage, ImageExt,
 };
 
 const MLFLOW_VERSION: &str = "2.18.0";

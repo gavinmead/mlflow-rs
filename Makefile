@@ -3,10 +3,10 @@
 clean:
 	cargo clean
 
-test:
+test: fmt
 	cargo test
 
 fmt:
-	cargo fmt
+	cargo fmt --all -- --check
 
 all: test
