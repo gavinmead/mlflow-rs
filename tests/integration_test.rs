@@ -1,9 +1,8 @@
 use mlflow_rs::add;
 use rstest::*;
-use std::time::Duration;
 use testcontainers::core::ContainerPort::Tcp;
 use testcontainers::{
-    core::{IntoContainerPort, WaitFor},
+    core::{WaitFor},
     runners::SyncRunner,
     ContainerRequest, GenericImage, ImageExt,
 };
@@ -37,9 +36,9 @@ fn test_fixture_ok(mlflow_server_container: ContainerRequest<GenericImage>) {
     let container = mlflow_server_container.start().unwrap();
     let host_port = container.get_host_port_ipv4(Tcp(5000)).unwrap();
     let url = format!("http://localhost:{}/{}", host_port, "version");
-    let mut resResult = reqwest::blocking::get(url);
-    assert_eq!(true, resResult.is_ok());
-    let res = resResult.unwrap();
+    let res_result = reqwest::blocking::get(url);
+    assert!(res_result.is_ok());
+    let res = res_result.unwrap();
     assert_eq!(res.status().as_u16(), 200);
 
     let version = res.text().unwrap();
