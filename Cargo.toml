@@ -1,0 +1,11 @@
+[package]
+name = "mlflow-rs"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+reqwest = { version = "0.12", features = ["json", "blocking"] }
+
+[dev-dependencies]
+rstest = "0.23.0"
+testcontainers = { version = "=0.23.1", features = ["blocking"] }
