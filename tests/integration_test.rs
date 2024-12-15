@@ -1,9 +1,10 @@
-use mlflow_rs::add;
 use rstest::*;
 use testcontainers::core::ContainerPort::Tcp;
 use testcontainers::{
     core::WaitFor, runners::SyncRunner, ContainerRequest, GenericImage, ImageExt,
 };
+
+use mlflow_rs::{ExperimentBuilder, ExperimentIdentifier, MLFLowRestClient};
 
 const MLFLOW_VERSION: &str = "2.18.0";
 const MLFLOW_DOCKER_IMAGE: &str = "ghcr.io/mlflow/mlflow";
@@ -24,11 +25,6 @@ fn mlflow_server_container() -> ContainerRequest<GenericImage> {
     container
 }
 
-#[test]
-fn test_add() {
-    assert_eq!(add(3, 2), 5);
-}
-
 #[rstest]
 fn test_fixture_ok(mlflow_server_container: ContainerRequest<GenericImage>) {
     let container = mlflow_server_container.start().unwrap();
@@ -41,4 +37,23 @@ fn test_fixture_ok(mlflow_server_container: ContainerRequest<GenericImage>) {
 
     let version = res.text().unwrap();
     assert_eq!(version, MLFLOW_VERSION);
+}
+
+#[rstest]
+fn test_create_experiment(mlflow_server_container: ContainerRequest<GenericImage>) {
+    let container = mlflow_server_container.start().unwrap();
+    let host_port = container.get_host_port_ipv4(Tcp(5000)).unwrap();
+    let url = format!("http://localhost:{}", host_port);
+
+    let client = MLFLowRestClient::new(url);
+
+    let experiment = ExperimentBuilder::new("test-experiment")
+        .unwrap()
+        .with_tag(("tag1", "value1"))
+        .with_rest_client(client)
+        .build();
+    assert!(experiment.is_ok());
+    assert!(experiment.clone().unwrap().experiment_id().is_some());
+    let id = experiment.clone().unwrap().experiment_id().unwrap();
+    println!("{}", id);
 }
