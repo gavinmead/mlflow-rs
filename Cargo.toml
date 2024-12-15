@@ -13,3 +13,4 @@ log = "0.4.22"
 [dev-dependencies]
 rstest = "0.23.0"
 testcontainers = { version = "=0.23.1", features = ["blocking"] }
+rand = "0.8.5"
