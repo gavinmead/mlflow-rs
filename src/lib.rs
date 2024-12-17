@@ -11,29 +11,17 @@
 //! ```
 //!
 
-use crate::MLFlowError::{ExperimentBuilderError, ExperimentNotFound, UnknownError};
-use reqwest::blocking::{Client, Response};
-use reqwest::StatusCode;
+pub mod client;
+pub mod config;
+pub mod err;
+
+use client::MLFlowClient;
+use err::MLFlowError::*;
+
+use crate::client::MLFLowRestClient;
 use serde::{Deserialize, Serialize};
 
-pub type MLFlowResult<T> = Result<T, MLFlowError>;
-#[derive(thiserror::Error, Debug, Clone)]
-pub enum MLFlowError {
-    #[error("ExperimentBuilderError: {0}")]
-    ExperimentBuilderError(String),
-
-    #[error("{0}")]
-    ExperimentNotFound(String),
-
-    #[error("ClientError: {0}")]
-    ClientError(String),
-
-    #[error("ResourceAlreadyExists: {0}")]
-    ResourceAlreadyExists(String),
-
-    #[error("UnknownError: {0}")]
-    UnknownError(String),
-}
+pub type MLFlowResult<T> = Result<T, err::MLFlowError>;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ExperimentTag {
@@ -47,119 +35,6 @@ impl From<(&str, &str)> for ExperimentTag {
             key: k.to_string(),
             value: v.to_string(),
         }
-    }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-struct CreateExperimentResponse {
-    experiment_id: String,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-struct GetExperimentResponse {
-    experiment: Experiment,
-}
-
-trait MLFlowClient {
-    fn create_experiment(&self, experiment: Experiment) -> MLFlowResult<CreateExperimentResponse>;
-
-    fn get_experiment_by_id(&self, id: impl AsRef<str>) -> MLFlowResult<GetExperimentResponse>;
-
-    fn get_experiment_by_name(&self, name: impl AsRef<str>) -> MLFlowResult<GetExperimentResponse>;
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct MLFLowRestClient {
-    client: Client,
-    host: String,
-}
-
-impl MLFLowRestClient {
-    pub fn new(host: impl AsRef<str>) -> Self {
-        //TODO support resolvers for host
-
-        MLFLowRestClient {
-            client: Client::new(),
-            host: host.as_ref().to_string(),
-        }
-    }
-
-    fn _process_get(
-        &self,
-        result: Result<Response, reqwest::Error>,
-    ) -> MLFlowResult<GetExperimentResponse> {
-        match result {
-            Ok(r) => {
-                if r.status().is_success() {
-                    let e = r.json::<GetExperimentResponse>();
-                    match e {
-                        Ok(result) => Ok(result),
-                        Err(e) => {
-                            println!("{}", e);
-                            Err(UnknownError(e.to_string()))
-                        }
-                    }
-                } else if r.status() == StatusCode::NOT_FOUND {
-                    Err(ExperimentNotFound("experiment was not found".to_string()))
-                } else {
-                    println!("experiment not found server message: {}", r.status());
-                    Err(UnknownError("error finding experiment".to_string()))
-                }
-            }
-            Err(e) => {
-                println!("{}", e);
-                Err(UnknownError(e.to_string()))
-            }
-        }
-    }
-}
-
-impl MLFlowClient for MLFLowRestClient {
-    fn create_experiment(&self, experiment: Experiment) -> MLFlowResult<CreateExperimentResponse> {
-        let url = format!("{}{}", &self.host, "/api/2.0/mlflow/experiments/create");
-        let result = self.client.post(url).json(&experiment).send();
-
-        match result {
-            Ok(result) => {
-                if result.status().is_success() {
-                    let e = result.json::<CreateExperimentResponse>();
-                    match e {
-                        Ok(result) => Ok(result),
-                        Err(e) => Err(UnknownError(e.to_string())),
-                    }
-                } else {
-                    println!("{:?}", result.error_for_status());
-                    Err(UnknownError("Could not create experiment".to_string()))
-                }
-            }
-            Err(result) => {
-                println!("{}", result);
-                Err(UnknownError(result.to_string()))
-            }
-        }
-    }
-
-    fn get_experiment_by_id(&self, id: impl AsRef<str>) -> MLFlowResult<GetExperimentResponse> {
-        let url = format!("{}{}", &self.host, "/api/2.0/mlflow/experiments/get");
-        let result = self
-            .client
-            .get(url)
-            .query(&[("experiment_id", id.as_ref())])
-            .send();
-        self._process_get(result)
-    }
-
-    fn get_experiment_by_name(&self, name: impl AsRef<str>) -> MLFlowResult<GetExperimentResponse> {
-        let url = format!(
-            "{}{}",
-            &self.host, "/api/2.0/mlflow/experiments/get-by-name"
-        );
-        let result = self
-            .client
-            .get(url)
-            .query(&[("experiment_name", name.as_ref())])
-            .send();
-        self._process_get(result)
     }
 }
 

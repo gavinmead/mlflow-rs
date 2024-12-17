@@ -6,10 +6,10 @@ use testcontainers::{
     core::WaitFor, runners::SyncRunner, ContainerRequest, GenericImage, ImageExt,
 };
 
+use mlflow_rs::client::MLFLowRestClient;
+use mlflow_rs::err::MLFlowError;
 use mlflow_rs::ExperimentIdentifierType::{ById, ByName};
-use mlflow_rs::{
-    ExperimentBuilder, ExperimentIdentifier, ExperimentLoader, MLFLowRestClient, MLFlowError,
-};
+use mlflow_rs::{ExperimentBuilder, ExperimentIdentifier, ExperimentLoader};
 
 const MLFLOW_VERSION: &str = "2.18.0";
 const MLFLOW_DOCKER_IMAGE: &str = "ghcr.io/mlflow/mlflow";
